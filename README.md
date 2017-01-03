@@ -18,58 +18,58 @@ How do I use this library:
 --------------------------
 
 ```java
-   Request request = Request.create("http://service.server.com/getData");
-   request.setMethod("POST")
-        .setTimeout(120) //2 Minutes
-        .addHeader("Authorization", "Key=MY_SERVICE_KEY")
-        .addParameter("key1", "value1")
-        .addParameter("key2", "value3")
-        .addParameter(new Parameter("key3", "value3"))
-        .addParameter("file", new File(""))
-        .setFileUploadListener(new FileUploadListener() {
-            @Override
-            public void onUploadingFile(File file, long size, long uploaded) {
+Request request = Request.create("http://service.server.com/getData");
+request.setMethod("POST")
+    .setTimeout(120) //2 Minutes
+    .addHeader("Authorization", "Key=MY_SERVICE_KEY")
+    .addParameter("key1", "value1")
+    .addParameter("key2", "value3")
+    .addParameter(new Parameter("key3", "value3"))
+    .addParameter("file", new File(""))
+    .setFileUploadListener(new FileUploadListener() {
+        @Override
+        public void onUploadingFile(File file, long size, long uploaded) {
 
-            }
-        })
-        .setRequestStateListener(new RequestStateListener() {
-            @Override
-            public void onStart() {
+        }
+    })
+    .setRequestStateListener(new RequestStateListener() {
+        @Override
+        public void onStart() {
 
-            }
+        }
 
-            @Override
-            public void onFinish() {
+        @Override
+        public void onFinish() {
 
-            }
-        })
-        .setResponseListener(new JsonResponseListener() {
-            @Override
-            public void onOkResponse(JSONObject jsonObject) throws JSONException {
+        }
+    })
+    .setResponseListener(new JsonResponseListener() {
+        @Override
+        public void onOkResponse(JSONObject jsonObject) throws JSONException {
 
-            }
+        }
 
-            @Override
-            public void onErrorResponse(JSONObject jsonObject) throws JSONException {
+        @Override
+        public void onErrorResponse(JSONObject jsonObject) throws JSONException {
 
-            }
+        }
 
-            @Override
-            public void onParseError(JSONException e) {
+        @Override
+        public void onParseError(JSONException e) {
 
-            }
-        }).execute();
+        }
+    }).execute();
  ```
 
 Download:
 ---------------
 
 ```gradle
-    repositories {
-        maven { url "https://jitpack.io" }
-    }
+repositories {
+    maven { url "https://jitpack.io" }
+}
 
-    dependencies {
-        compile 'com.github.ander7agar:android-http-client:0.1.0'
-    }
+dependencies {
+    compile 'com.github.ander7agar:android-http-client:0.1.0'
+}
 ```
