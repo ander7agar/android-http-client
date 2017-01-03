@@ -17,7 +17,8 @@ These are the interfaces that includes the library and its use:
 How do I use this library:
 --------------------------
 
-```Request request = Request.create("http://service.server.com/getData");
+```java
+   Request request = Request.create("http://service.server.com/getData");
    request.setMethod("POST")
         .setTimeout(120) //2 Minutes
         .addHeader("Authorization", "Key=MY_SERVICE_KEY")
@@ -63,6 +64,7 @@ How do I use this library:
 Download:
 ---------------
 
+```gradle
     repositories {
         maven { url "https://jitpack.io" }
     }
@@ -70,3 +72,4 @@ Download:
     dependencies {
         compile 'com.github.ander7agar:android-http-client:0.1.0'
     }
+```
