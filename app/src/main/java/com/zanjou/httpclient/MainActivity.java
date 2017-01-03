@@ -23,7 +23,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Request request = Request.create("http://service.server.com/getData");
-        request.addHeader("Authorization", "Key=MY_SERVICE_KEY")
+        request.setMethod("POST")
+                .setTimeout(120) //2 Minutes
+                .addHeader("Authorization", "Key=MY_SERVICE_KEY")
                 .addParameter("key1", "value1")
                 .addParameter("key2", "value3")
                 .addParameter(new Parameter("key3", "value3"))
