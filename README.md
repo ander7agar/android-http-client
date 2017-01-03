@@ -5,10 +5,12 @@ You can implement multiple interfaces for the management of the responses. It al
 for managing upload and download of files.
 
 These are the interfaces that includes the library and its use:
-    * **RequestStateListener**: Capture the events of the start and end of the request.
-    * **ResponseListener**: Capture the response when making the request.
-    * **FileUploadListener**: Capture an upload of a file.
-    * **FileDownloadListener**: Capture an download of a file.
+
+    - **RequestStateListener**: Capture the events of the start and end of the request.
+    - **ResponseListener**: Capture the response when making the request.
+    - **FileUploadListener**: Capture an upload of a file.
+    - **FileDownloadListener**: Capture an download of a file.
+
 Example:
 
          Request request = Request.create("http://service.server.com/getData");
