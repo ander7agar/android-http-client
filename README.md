@@ -9,10 +9,10 @@ for managing upload and download of files.
 
 These are the interfaces that includes the library and its use:
 
-    - **RequestStateListener**: Capture the events of the start and end of the request.
-    - **ResponseListener**: Capture the response when making the request.
-    - **FileUploadListener**: Capture an upload of a file.
-    - **FileDownloadListener**: Capture an download of a file.
+- **RequestStateListener**: Capture the events of the start and end of the request.
+- **ResponseListener**: Capture the response when making the request.
+- **FileUploadListener**: Capture an upload of a file.
+- **FileDownloadListener**: Capture an download of a file.
 
 How do I use this library:
 --------------------------
@@ -25,7 +25,7 @@ request.setMethod("POST")
     .addParameter("key1", "value1")
     .addParameter("key2", "value3")
     .addParameter(new Parameter("key3", "value3"))
-    .addParameter("file", new File(""))
+    .addParameter("file", new File("myfile.txt"))
     .setFileUploadListener(new FileUploadListener() {
         @Override
         public void onUploadingFile(File file, long size, long uploaded) {
