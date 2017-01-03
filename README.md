@@ -1,3 +1,5 @@
+[![](https://jitpack.io/v/ander7agar/android-http-client.svg)](https://jitpack.io/#ander7agar/android-http-client)
+
 **Android HTTP Client**
 
 Android Http Client is a small library to make requests to any internet service simple and practical way.
@@ -11,7 +13,7 @@ These are the interfaces that includes the library and its use:
     - **FileUploadListener**: Capture an upload of a file.
     - **FileDownloadListener**: Capture an download of a file.
 
-Example:
+**Example**:
 
          Request request = Request.create("http://service.server.com/getData");
          request.setMethod("POST")
@@ -55,3 +57,12 @@ Example:
                      }
                  }).execute();
 
+**Implementation**:
+
+    repositories {
+        maven { url "https://jitpack.io" }
+    }
+
+    dependencies {
+        compile 'com.github.ander7agar:android-http-client:0.1.0'
+    }
