@@ -10,6 +10,9 @@ import com.zanjou.http.response.FileResponseListener;
 import com.zanjou.http.response.ResponseListener;
 import com.zanjou.http.util.ByteStream;
 
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -25,6 +28,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collection;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+
 /**
  * Created by ander on 4/07/16.
  */
@@ -34,7 +40,7 @@ public class Request {
 
     private static final String CRLF = "\r\n";
 
-    public static final int DEFAULT_TIMEOUT = 60;
+    public static final int DEFAULT_TIMEOUT = 60000;
 
     private URL url;
     private String method;
@@ -176,8 +182,8 @@ public class Request {
         return this;
     }
 
-    public Request setTimeout(int timeout) {
-        this.timeout = timeout;
+    public Request setTimeout(int timeoutInSeconds) {
+        this.timeout = timeoutInSeconds * 1000;
         return this;
     }
 
