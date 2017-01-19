@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.zanjou.http.common.Header;
 import com.zanjou.http.common.HeaderBag;
+import com.zanjou.http.debug.Logger;
 import com.zanjou.http.response.FileDownloadListener;
 import com.zanjou.http.response.FileResponseListener;
 import com.zanjou.http.response.ResponseListener;
@@ -32,6 +33,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collection;
 
+import static com.zanjou.http.debug.Logger.DEBUG;
+import static com.zanjou.http.debug.Logger.ERROR;
+
 /**
  * Created by ander on 4/07/16.
  */
@@ -54,6 +58,8 @@ public class Request {
     private RequestStateListener requestStateListener;
     private ProgressTask runner;
     private StringBuilder sb;
+    private Logger logger;
+
     private int timeout = DEFAULT_TIMEOUT * 1000;
 
     private Request(){
@@ -188,6 +194,10 @@ public class Request {
         return this;
     }
 
+    public void setLogger(Logger logger) {
+        this.logger = logger;
+    }
+
     public void execute() {
         runner = new ProgressTask() {
             @Override
@@ -204,6 +214,7 @@ public class Request {
                     connection.setRequestMethod(getMethod());
 
                     sb.append("URL: ").append(getMethod()).append(" ").append(url.toString());
+                    logging(sb.toString(), DEBUG);
                     connection.setDoOutput(!parameters.isEmpty());
 
                     sendHeaders(connection);
@@ -230,11 +241,14 @@ public class Request {
                         }
 
                         String response = new String(data);
-                        Log.e(TAG, "Response: " + response);
+
+                        logging("Response: " + response, DEBUG);
+
                         responseListener.onResponse(responseCode, response);
                     }
                     connection.disconnect();
                 } catch (IOException e) {
+                    logging("Error trying to perform request", ERROR, e);
                     fireOnFinish = false;
                     if (requestStateListener != null) {
                         requestStateListener.onConnectionError(e);
@@ -262,16 +276,9 @@ public class Request {
             bufferSize = 1;
         }
 
-        FileResponseListener fileListener = null;
-        File downloadFile = null;
-        OutputStream output;
-        if (responseListener instanceof FileResponseListener) {
-            fileListener = (FileResponseListener) responseListener;
-            downloadFile = fileListener.getFile();
-            output  = new FileOutputStream(downloadFile);
-        } else {
-            output = new ByteArrayOutputStream();
-        }
+        FileResponseListener fileListener = (FileResponseListener) responseListener;
+        File downloadFile = fileListener.getFile();
+        OutputStream output  = new FileOutputStream(downloadFile);
 
         InputStream input = connection.getInputStream();
 
@@ -293,10 +300,7 @@ public class Request {
                     fileDownloadListener.onDownloadCancel();
                 }
 
-                if (fileListener != null) {
-                    fileListener.onCancel();
-                }
-
+                fileListener.onCancel();
                 return;
             }
 
@@ -332,7 +336,7 @@ public class Request {
         if (!parameters.isEmpty()) {
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, "UTF-8"));
 
-            sb.append("\n").append("---- PARAMETERS ----");
+            logging("---- PARAMETERS ----", DEBUG);
             for (Parameter p : parameters) {
 
                 writer.append("--").append(boundary).append(CRLF);
@@ -340,8 +344,8 @@ public class Request {
                 writer.append(p.getContentType()).append(CRLF);
 
                 if (p.isFile()) {
-                    sb.append("\n")
-                            .append(p.getNameParam()).append(" = ") .append("FILE[").append(p.getFile().getAbsolutePath()).append("]");
+
+                    logging(p.getNameParam() + " = FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
 
                     writer.append("Content-Disposition: form-data; name=\"")
                             .append(p.getNameParam())
@@ -396,8 +400,8 @@ public class Request {
                     }
 
                 } else {
-                    sb.append("\n")
-                            .append(p.getNameParam()).append(" = ") .append(new String(p.getParamValue()));
+                    logging(p.getNameParam() + " = " + new String(p.getParamValue()), DEBUG);
+
                     writer.append("Content-Disposition: form-data; name=\"")
                             .append(p.getNameParam())
                             .append("\"").append(CRLF);
@@ -414,16 +418,36 @@ public class Request {
     }
 
     private void sendHeaders(URLConnection connection) {
-        sb.append("\n")
-                .append("---- HEADERS ----");
+        logging("---- HEADERS ----", DEBUG);
         for (Header h : headers) {
             String key = h.getKey();
             if (method.equalsIgnoreCase("GET") && key.equalsIgnoreCase("content-type")) {
                 continue;
             }
-            sb.append("\n")
-                    .append(key).append(" = ").append(h.getValue());
+
+            logging(key + " = " + h.getValue(), DEBUG);
+
             connection.addRequestProperty(key, h.getValue());
+        }
+    }
+
+    private void logging(String message, int level) {
+        logging(message, level, null);
+    }
+
+    private void logging(String message, int level, Exception e) {
+        if (logger != null) {
+            switch (level) {
+                case Logger.INFO:
+                    logger.i(TAG, message, e);
+                    break;
+                case DEBUG:
+                    logger.d(TAG, message, e);
+                    break;
+                default:
+                    logger.e(TAG, message, e);
+                    break;
+            }
         }
     }
 
@@ -437,6 +461,8 @@ public class Request {
         }
 
     }
+
+
 
 
     private abstract class ProgressTask extends AsyncTask<Void, Object, Void> {
