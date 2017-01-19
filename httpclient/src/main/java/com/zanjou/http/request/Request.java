@@ -1,10 +1,6 @@
 package com.zanjou.http.request;
 
-import android.content.ContextWrapper;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.Environment;
 import android.util.Log;
 
 import com.zanjou.http.common.Header;
@@ -14,9 +10,6 @@ import com.zanjou.http.response.FileDownloadListener;
 import com.zanjou.http.response.FileResponseListener;
 import com.zanjou.http.response.ResponseListener;
 import com.zanjou.http.util.ByteStream;
-
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
