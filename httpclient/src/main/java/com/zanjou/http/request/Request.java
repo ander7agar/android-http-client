@@ -1,5 +1,7 @@
 package com.zanjou.http.request;
 
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -27,9 +29,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collection;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Created by ander on 4/07/16.
@@ -195,6 +194,7 @@ public class Request {
                     requestStateListener.onStart();
                 }
 
+                boolean fireOnfinish = true;
                 try {
                     sb = new StringBuilder();
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -233,10 +233,13 @@ public class Request {
                     }
                     connection.disconnect();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    fireOnfinish = false;
+                    if (requestStateListener != null) {
+                        requestStateListener.onConnectionError(e);
+                    }
                 }
 
-                if (requestStateListener != null) {
+                if (requestStateListener != null && fireOnfinish) {
                     requestStateListener.onFinish();
                 }
                 return null;
