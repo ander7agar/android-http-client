@@ -322,6 +322,9 @@ public class Request {
             if (p.isFile() && method.equalsIgnoreCase(GET)) {
                 logging(p.getNameParam() + " = IGNORED FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
                 continue;
+            } else if (p.isFile()) {
+                logging(p.getNameParam() + " = FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
+                continue;
             }
 
             logging(p.getNameParam() + " = " + new String(p.getParamValue()), DEBUG);
@@ -396,7 +399,6 @@ public class Request {
         if (!parameters.isEmpty()) {
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, "UTF-8"));
 
-            logging("---- PARAMETERS ----", DEBUG);
             for (Parameter p : parameters) {
 
                 writer.append("--").append(boundary).append(CRLF);
@@ -404,13 +406,6 @@ public class Request {
                 writer.append(p.getContentType()).append(CRLF);
 
                 if (p.isFile()) {
-
-                    if (method.equals(GET)) {
-                        logging(p.getNameParam() + " = INGORED FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
-                        continue;
-                    }
-
-                    logging(p.getNameParam() + " = FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
                     writer.append("Content-Disposition: form-data; name=\"")
                             .append(p.getNameParam())
                             .append("\"; filename=\"")
@@ -464,8 +459,6 @@ public class Request {
                     }
 
                 } else {
-                    logging(p.getNameParam() + " = " + new String(p.getParamValue()), DEBUG);
-
                     if (!method.equals(GET)) {
                         writer.append("Content-Disposition: form-data; name=\"")
                                 .append(p.getNameParam())
