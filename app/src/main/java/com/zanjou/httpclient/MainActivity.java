@@ -3,7 +3,6 @@ package com.zanjou.httpclient;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import com.zanjou.http.debug.Logger;
 import com.zanjou.http.request.FileUploadListener;
 import com.zanjou.http.request.Parameter;
 import com.zanjou.http.request.Request;
@@ -23,11 +22,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Request request = Request.create("https://activismap-api.owldevelopers.com/v1/public/search");
-        request.setMethod(Request.GET)
+        Request request = Request.create("http://service.server.com/getData");
+        request.setMethod("POST")
                 .setTimeout(120) //2 Minutes
-                .addParameter("area", "69.5754653691267,63.281267769634724@-69.57545004180163,-63.281245976686485")
-                .setLogger(new Logger(Logger.ERROR))
+                .addHeader("Authorization", "Key=MY_SERVICE_KEY")
+                .addParameter("key1", "value1")
+                .addParameter("key2", "value3")
+                .addParameter(new Parameter("key3", "value3"))
+                .addParameter("file", new File(""))
                 .setFileUploadListener(new FileUploadListener() {
                     @Override
                     public void onUploadingFile(File file, long size, long uploaded) {
