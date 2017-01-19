@@ -270,7 +270,7 @@ public class Request {
 
                         logging("Response: " + response, DEBUG);
 
-                        responseListener.onResponse(responseCode, response);
+                        publishProgress(responseCode, response);
                     }
                     connection.disconnect();
                 } catch (IOException e) {
@@ -546,7 +546,17 @@ public class Request {
                 Log.e(TAG, "uploading " + progress + " / " + length);
                 fileUploadListener.onUploadingFile(f, length, progress);
             }
-            //publishProgress(values);
+        }
+
+        @Override
+        protected void onProgressUpdate(Object... values) {
+            super.onProgressUpdate(values);
+
+            if (responseListener != null) {
+                int responseCode = Integer.parseInt(values[0].toString());
+                String response = values[1].toString();
+                responseListener.onResponse(responseCode, response);
+            }
         }
     }
 }
