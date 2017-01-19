@@ -85,7 +85,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.ander7agar:android-http-client:0.1.1'
+    compile 'com.github.ander7agar:android-http-client:0.1.2'
 }
 ```
 
