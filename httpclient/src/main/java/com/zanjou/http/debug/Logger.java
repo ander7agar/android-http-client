@@ -9,9 +9,9 @@ public class Logger {
 
     private static final String TAG = "Log";
 
-    public static final int INFO = 2;
+    public static final int INFO = 0;
     public static final int DEBUG = 1;
-    public static final int ERROR = 0;
+    public static final int ERROR = 2;
 
     private int level;
 
@@ -33,18 +33,18 @@ public class Logger {
     public void d (String tag, String message, Throwable e) {
         if (level >= DEBUG) {
             if (e != null) {
-                Log.i(tag, message, e);
+                Log.d(tag, message, e);
             } else {
-                Log.i(tag, message);
+                Log.d(tag, message);
             }
         }
     }
 
     public void e (String tag, String message, Throwable e) {
         if (e != null) {
-            Log.i(tag, message, e);
+            Log.e(tag, message, e);
         } else {
-            Log.i(tag, message);
+            Log.e(tag, message);
         }
     }
 }

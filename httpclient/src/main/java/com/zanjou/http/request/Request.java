@@ -1,5 +1,6 @@
 package com.zanjou.http.request;
 
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -22,12 +23,16 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.Collection;
+import java.util.Map;
 
 import static com.zanjou.http.debug.Logger.DEBUG;
 import static com.zanjou.http.debug.Logger.ERROR;
+import static com.zanjou.http.debug.Logger.INFO;
 
 /**
  * Created by ander on 4/07/16.
@@ -37,6 +42,14 @@ public class Request {
     private static final String TAG = "Request";
 
     private static final String CRLF = "\r\n";
+
+    public static final String GET = "GET";
+    public static final String POST = "POST";
+    public static final String PUT = "PUT";
+    public static final String DELETE = "DELETE";
+    public static final String OPTIONS = "OPTIONS";
+    public static final String HEAD = "HEAD";
+    public static final String TRACE = "TRACE";
 
     public static final int DEFAULT_TIMEOUT = 60;
 
@@ -50,7 +63,6 @@ public class Request {
     private FileDownloadListener fileDownloadListener;
     private RequestStateListener requestStateListener;
     private ProgressTask runner;
-    private StringBuilder sb;
     private Logger logger;
 
     private int timeout = DEFAULT_TIMEOUT * 1000;
@@ -187,8 +199,9 @@ public class Request {
         return this;
     }
 
-    public void setLogger(Logger logger) {
+    public Request setLogger(Logger logger) {
         this.logger = logger;
+        return this;
     }
 
     public void execute() {
@@ -216,24 +229,29 @@ public class Request {
             protected Void doInBackground(Void... params) {
 
                 try {
-                    sb = new StringBuilder();
-                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+                    String method = getMethod();
+
+                    String finalUrl = parseWithGet();
+
+                    URL finalURL = new URL(finalUrl);
+
+                    HttpURLConnection connection = (HttpURLConnection) finalURL.openConnection();
                     connection.setConnectTimeout(timeout);
+
+                    connection.setDoOutput(!method.equals(GET));
                     connection.setRequestMethod(getMethod());
 
-                    sb.append("URL: ").append(getMethod()).append(" ").append(url.toString());
-                    logging(sb.toString(), DEBUG);
-                    connection.setDoOutput(!parameters.isEmpty());
+                    logging("URL: " + method + " " + url.toString(), DEBUG);
 
                     sendHeaders(connection);
+                    printParams();
 
-                    if (!parameters.isEmpty()) {
+                    if (!method.equals(GET)) {
                         OutputStream outputStream = connection.getOutputStream();
                         sendParams(outputStream);
                     }
 
-
-                    Log.e(TAG, sb.toString());
                     if (responseListener != null) {
                         int responseCode = connection.getResponseCode();
                         byte[] data;
@@ -268,6 +286,47 @@ public class Request {
         };
 
         runner.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+
+    private String parseWithGet() {
+        String method = getMethod();
+
+        if (method == null) {
+            method = GET;
+        }
+
+        if (!method.equalsIgnoreCase(GET)) {
+            return url.toString();
+        }
+
+        Uri uri = Uri.parse(url.toString());
+        Uri.Builder uriBuilder = uri.buildUpon();
+
+        ParameterBag parameters = getParameters();
+
+        for (Parameter p : parameters) {
+            if (p.isFile()) {
+                continue;
+            }
+
+            uriBuilder.appendQueryParameter(p.getNameParam(), p.getValueAsString());
+        }
+
+        return uriBuilder.build().toString();
+    }
+
+    private void printParams() {
+        logging("---- PARAMETERS ----", DEBUG);
+
+        for (Parameter p : parameters) {
+            if (p.isFile() && method.equalsIgnoreCase(GET)) {
+                logging(p.getNameParam() + " = IGNORED FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
+                continue;
+            }
+
+            logging(p.getNameParam() + " = " + new String(p.getParamValue()), DEBUG);
+        }
+
     }
 
     private void downloadFile(HttpURLConnection connection) throws IOException {
@@ -346,8 +405,12 @@ public class Request {
 
                 if (p.isFile()) {
 
-                    logging(p.getNameParam() + " = FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
+                    if (method.equals(GET)) {
+                        logging(p.getNameParam() + " = INGORED FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
+                        continue;
+                    }
 
+                    logging(p.getNameParam() + " = FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
                     writer.append("Content-Disposition: form-data; name=\"")
                             .append(p.getNameParam())
                             .append("\"; filename=\"")
@@ -403,12 +466,15 @@ public class Request {
                 } else {
                     logging(p.getNameParam() + " = " + new String(p.getParamValue()), DEBUG);
 
-                    writer.append("Content-Disposition: form-data; name=\"")
-                            .append(p.getNameParam())
-                            .append("\"").append(CRLF);
-                    writer.append(p.getContentType())
-                            .append(CRLF);
-                    writer.append(CRLF).append(p.getValueAsString());
+                    if (!method.equals(GET)) {
+                        writer.append("Content-Disposition: form-data; name=\"")
+                                .append(p.getNameParam())
+                                .append("\"").append(CRLF);
+                        writer.append(p.getContentType())
+                                .append(CRLF);
+                        writer.append(CRLF).append(p.getValueAsString());
+                    }
+
                 }
 
                 writer.append(CRLF).flush();
@@ -439,7 +505,7 @@ public class Request {
     private void logging(String message, int level, Exception e) {
         if (logger != null) {
             switch (level) {
-                case Logger.INFO:
+                case INFO:
                     logger.i(TAG, message, e);
                     break;
                 case DEBUG:
@@ -453,6 +519,10 @@ public class Request {
     }
 
     public static Request create(String url) {
+        if (!url.contains("https://") && url.contains("https://")) {
+            url = "http://" + url;
+        }
+
         try {
             Request r = new Request();
             r.url = new URL(url);
