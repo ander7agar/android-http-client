@@ -39,7 +39,7 @@ public class Request {
 
     private static final String CRLF = "\r\n";
 
-    public static final int DEFAULT_TIMEOUT = 60000;
+    public static final int DEFAULT_TIMEOUT = 60;
 
     private URL url;
     private String method;
@@ -52,7 +52,7 @@ public class Request {
     private RequestStateListener requestStateListener;
     private ProgressTask runner;
     private StringBuilder sb;
-    private int timeout = DEFAULT_TIMEOUT;
+    private int timeout = DEFAULT_TIMEOUT * 1000;
 
     private Request(){
         boundary = Long.toHexString(System.currentTimeMillis());
