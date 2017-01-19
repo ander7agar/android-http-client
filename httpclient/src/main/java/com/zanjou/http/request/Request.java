@@ -193,13 +193,28 @@ public class Request {
 
     public void execute() {
         runner = new ProgressTask() {
+
+            boolean fireOnFinish = true;
+
             @Override
-            protected Void doInBackground(Void... params) {
+            protected void onPreExecute() {
+                super.onPreExecute();
                 if (requestStateListener != null) {
                     requestStateListener.onStart();
                 }
+            }
 
-                boolean fireOnFinish = true;
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                if (requestStateListener != null && fireOnFinish) {
+                    requestStateListener.onFinish();
+                }
+            }
+
+            @Override
+            protected Void doInBackground(Void... params) {
+
                 try {
                     sb = new StringBuilder();
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -248,17 +263,10 @@ public class Request {
                     }
                 }
 
-                if (requestStateListener != null && fireOnFinish) {
-                    requestStateListener.onFinish();
-                }
                 return null;
             }
-
-            @Override
-            protected void onProgressUpdate(Object... values) {
-
-            }
         };
+
         runner.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
