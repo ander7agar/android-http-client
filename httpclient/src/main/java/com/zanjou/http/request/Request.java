@@ -1,8 +1,10 @@
 package com.zanjou.http.request;
 
+import android.content.ContextWrapper;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.util.Log;
 
 import com.zanjou.http.common.Header;
@@ -194,7 +196,7 @@ public class Request {
                     requestStateListener.onStart();
                 }
 
-                boolean fireOnfinish = true;
+                boolean fireOnFinish = true;
                 try {
                     sb = new StringBuilder();
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -233,13 +235,13 @@ public class Request {
                     }
                     connection.disconnect();
                 } catch (IOException e) {
-                    fireOnfinish = false;
+                    fireOnFinish = false;
                     if (requestStateListener != null) {
                         requestStateListener.onConnectionError(e);
                     }
                 }
 
-                if (requestStateListener != null && fireOnfinish) {
+                if (requestStateListener != null && fireOnFinish) {
                     requestStateListener.onFinish();
                 }
                 return null;
@@ -259,10 +261,20 @@ public class Request {
         if (bufferSize <= 0) {
             bufferSize = 1;
         }
-        FileResponseListener fileListener = (FileResponseListener) responseListener;
+
+        FileResponseListener fileListener = null;
+        File downloadFile = null;
+        OutputStream output;
+        if (responseListener instanceof FileResponseListener) {
+            fileListener = (FileResponseListener) responseListener;
+            downloadFile = fileListener.getFile();
+            output  = new FileOutputStream(downloadFile);
+        } else {
+            output = new ByteArrayOutputStream();
+        }
+
         InputStream input = connection.getInputStream();
-        File downloadFile = fileListener.getFile();
-        OutputStream output  = new FileOutputStream(downloadFile);
+
         byte[] fileData = new byte[bufferSize];
         long total = 0;
         int count;
@@ -272,6 +284,7 @@ public class Request {
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
         while ((count = input.read(fileData)) != -1) {
             if (runner.isCancelled()) {
                 input.close();
@@ -279,7 +292,11 @@ public class Request {
                 if (fileDownloadListener != null) {
                     fileDownloadListener.onDownloadCancel();
                 }
-                fileListener.onCancel();
+
+                if (fileListener != null) {
+                    fileListener.onCancel();
+                }
+
                 return;
             }
 
@@ -290,13 +307,19 @@ public class Request {
                 fileDownloadListener.onDownloadingFile(downloadFile, fileLength, total);
             }
         }
+
         byte[] data = baos.toByteArray();
         output.write(data);
+        output.flush();
+        output.close();
 
-        if (fileDownloadListener != null) {
-            fileDownloadListener.onDownloadFinish();
+        if (!runner.isCancelled()) {
+            if (fileDownloadListener != null) {
+                fileDownloadListener.onDownloadFinish();
+            }
+            responseListener.onResponse(200, new String(data));
         }
-        responseListener.onResponse(200, new String(data));
+
     }
 
     public void cancel() {
