@@ -50,6 +50,11 @@ request.setMethod("POST")
         public void onFinish() {
 
         }
+
+        @Override
+        public void onConnectionError(Exception e) {
+           e.printStackTrace();
+        }
     })
     .setResponseListener(new JsonResponseListener() {
         @Override
