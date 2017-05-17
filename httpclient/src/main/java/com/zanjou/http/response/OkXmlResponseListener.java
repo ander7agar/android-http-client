@@ -2,9 +2,8 @@ package com.zanjou.http.response;
 
 import android.util.Log;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.w3c.dom.Document;
+import org.jsoup.nodes.Document;
+
 
 /**
  * Created by Andersson G. Acosta on 10/01/17.

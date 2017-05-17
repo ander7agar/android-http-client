@@ -2,49 +2,44 @@ package com.zanjou.httpclient;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.TextView;
 
+import com.zanjou.http.debug.Logger;
 import com.zanjou.http.request.FileUploadListener;
 import com.zanjou.http.request.Parameter;
 import com.zanjou.http.request.Request;
 import com.zanjou.http.request.RequestStateListener;
 import com.zanjou.http.response.JsonResponseListener;
+import com.zanjou.http.response.XmlResponseListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.File;
-import java.net.MalformedURLException;
+import org.jsoup.nodes.Document;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Request request = Request.create("http://service.server.com/getData");
-        request.setMethod("POST")
+        final TextView response = (TextView) findViewById(R.id.response);
+        Request request = Request.create("http://www.google.com");
+        request.setMethod(Request.GET)
                 .setTimeout(120) //2 Minutes
-                .addHeader("Authorization", "Key=MY_SERVICE_KEY")
-                .addParameter("key1", "value1")
-                .addParameter("key2", "value3")
-                .addParameter(new Parameter("key3", "value3"))
-                .addParameter("file", new File(""))
-                .setFileUploadListener(new FileUploadListener() {
-                    @Override
-                    public void onUploadingFile(File file, long size, long uploaded) {
-
-                    }
-                })
+                .setLogger(new Logger(Logger.ERROR))
                 .setRequestStateListener(new RequestStateListener() {
                     @Override
                     public void onStart() {
-
+                        Log.d(TAG, "onStart");
                     }
 
                     @Override
                     public void onFinish() {
-
+                        Log.d(TAG, "onFinish");
                     }
 
                     @Override
@@ -52,20 +47,20 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 })
-                .setResponseListener(new JsonResponseListener() {
+                .setResponseListener(new XmlResponseListener() {
                     @Override
-                    public void onOkResponse(JSONObject jsonObject) throws JSONException {
-
+                    public void onOkResponse(Document document) {
+                        response.setText(document.text());
                     }
 
                     @Override
-                    public void onErrorResponse(JSONObject jsonObject) throws JSONException {
-
+                    public void onErrorResponse(Document document) {
+                        response.setText(document.text());
                     }
 
                     @Override
-                    public void onParseError(JSONException e) {
-
+                    public void onParseError(Exception e) {
+                        e.printStackTrace();
                     }
                 }).execute();
     }

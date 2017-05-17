@@ -11,4 +11,8 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.zanjou.httpclient.MainActivity">
 
+    <TextView
+        android:id="@+id/response"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
 </RelativeLayout>
