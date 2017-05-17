@@ -19,7 +19,7 @@ Compatibility:
 --------------
 - **Android SDK**: Android Http Client requires a minimum API Level 11
 - **JSON**: Android Http Client uses [JSON Java Library](http://www.json.org/) for compatibility json responses.
-- **XML**: Android Http Client uses [DOM Library](https://docs.oracle.com/javase/tutorial/jaxp/dom/readingXML.html) for compatibility xml responses.
+- **XML**: Android Http Client uses [Jsoup Library](https://jsoup.org) for compatibility xml responses.
 
 
 How do I use this library:
