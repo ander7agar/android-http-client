@@ -288,7 +288,8 @@ public class Request {
         runner.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
-    private String parseWithGet() {
+    private String
+    parseWithGet() {
         String method = getMethod();
 
         if (method == null) {
@@ -512,7 +513,7 @@ public class Request {
     }
 
     public static Request create(String url) {
-        if (!url.contains("https://") && url.contains("https://")) {
+        if (!url.contains("https://") && !url.contains("https://")) {
             url = "http://" + url;
         }
 
