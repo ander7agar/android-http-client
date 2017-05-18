@@ -254,7 +254,7 @@ public class Request {
 
                     int responseCode = connection.getResponseCode();
                     byte[] data;
-                    if (200 >= connection.getResponseCode() && connection.getResponseCode() <= 299) {
+                    if (responseCode >= 200 && responseCode <= 399) {
                         if (responseListener instanceof FileResponseListener) {
                             downloadFile(connection);
                             return null;
