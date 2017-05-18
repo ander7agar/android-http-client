@@ -252,26 +252,24 @@ public class Request {
                         sendParams(outputStream);
                     }
 
-                    if (responseListener != null) {
-                        int responseCode = connection.getResponseCode();
-                        byte[] data;
-                        if (200 >= connection.getResponseCode() && connection.getResponseCode() <= 299) {
-                            if (responseListener instanceof FileResponseListener) {
-                                downloadFile(connection);
-                                return null;
-                            } else {
-                                data = ByteStream.toByteArray(connection.getInputStream());
-                            }
+                    int responseCode = connection.getResponseCode();
+                    byte[] data;
+                    if (200 >= connection.getResponseCode() && connection.getResponseCode() <= 299) {
+                        if (responseListener instanceof FileResponseListener) {
+                            downloadFile(connection);
+                            return null;
                         } else {
-                            data = ByteStream.toByteArray(connection.getErrorStream());
+                            data = ByteStream.toByteArray(connection.getInputStream());
                         }
-
-                        String response = new String(data);
-
-                        logging("Response: " + response, DEBUG);
-
-                        publishProgress(responseCode, response);
+                    } else {
+                        data = ByteStream.toByteArray(connection.getErrorStream());
                     }
+
+                    String response = new String(data);
+
+                    logging("Response: " + response, DEBUG);
+
+                    publishProgress(responseCode, response);
                     connection.disconnect();
                 } catch (IOException e) {
                     logging("Error trying to perform request", ERROR, e);
