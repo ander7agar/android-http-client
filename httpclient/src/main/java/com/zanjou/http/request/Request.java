@@ -262,7 +262,13 @@ public class Request {
                             data = ByteStream.toByteArray(connection.getInputStream());
                         }
                     } else {
-                        data = ByteStream.toByteArray(connection.getErrorStream());
+                        InputStream is = connection.getErrorStream();
+                        if (is != null) {
+                            data = ByteStream.toByteArray(connection.getErrorStream());
+                        } else {
+                            logging("No response. Invalid HTTP CODE Response? " + responseCode, ERROR);
+                            data = "{\"error\":\"No response\"}".getBytes();
+                        }
                     }
 
                     String response = new String(data);
