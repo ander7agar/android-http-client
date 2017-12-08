@@ -465,6 +465,7 @@ public class Request {
 
                     }
 
+                    dataOutputStream.flush();
                     if (fileUploadListener != null) {
                         fileUploadListener.onUploadFinish(p.getFile());
                     }
