@@ -436,17 +436,15 @@ public class Request {
                     }
 
                     ByteArrayInputStream bais = new ByteArrayInputStream(data);
+                    int maxBufferSize = 4096;
+                    int bytesAvailable = bais.available();
 
-                    int bufferSize = data.length / 100;
-                    if (bufferSize <= 0) {
-                        bufferSize = 1;
-                    }
-                    byte[] buff = new byte[bufferSize];
+                    int bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                    byte[] buffer = new byte[bufferSize];
+                    int bytesRead = bais.read(buffer, 0, bufferSize);
 
-                    int lenght;
                     long progress = 0;
-                    while ((lenght = bais.read(buff)) != -1 ) {
-
+                    while (bytesRead > 0) {
                         if (runner.isCancelled()) {
                             bais.close();
                             dataOutputStream.close();
@@ -455,12 +453,17 @@ public class Request {
                             }
                             return;
                         }
-                        dataOutputStream.write(buff, 0, lenght);
-                        progress += lenght;
-                        runner.publishProgress2((long) data.length, progress, p.getFile());
-                    }
 
-                    dataOutputStream.flush();
+                        dataOutputStream.write(buffer, 0, bufferSize);
+                        progress += bufferSize;
+
+                        runner.publishProgress2((long) data.length, progress, p.getFile());
+
+                        bytesAvailable = bais.available();
+                        bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                        bytesRead = bais.read(buffer, 0, bufferSize);
+
+                    }
 
                     if (fileUploadListener != null) {
                         fileUploadListener.onUploadFinish(p.getFile());
