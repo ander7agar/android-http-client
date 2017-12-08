@@ -14,6 +14,7 @@ import com.zanjou.http.util.ByteStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -411,6 +412,8 @@ public class Request {
                 writer.append(p.getContentType()).append(CRLF);
 
                 if (p.isFile()) {
+                    DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+
                     writer.append("Content-Disposition: form-data; name=\"")
                             .append(p.getNameParam())
                             .append("\"; filename=\"")
@@ -446,18 +449,18 @@ public class Request {
 
                         if (runner.isCancelled()) {
                             bais.close();
-                            outputStream.close();
+                            dataOutputStream.close();
                             if (fileUploadListener != null) {
                                 fileUploadListener.onUploadCancel();
                             }
                             return;
                         }
-                        outputStream.write(buff, 0, lenght);
+                        dataOutputStream.write(buff, 0, lenght);
                         progress += lenght;
                         runner.publishProgress2((long) data.length, progress, p.getFile());
                     }
 
-                    outputStream.flush();
+                    dataOutputStream.flush();
 
                     if (fileUploadListener != null) {
                         fileUploadListener.onUploadFinish(p.getFile());
