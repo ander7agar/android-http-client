@@ -2,12 +2,15 @@ package com.zanjou.http.util;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Path;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -105,27 +108,33 @@ public class FileUtils {
     }
 
     public static byte[] loadFile(File file) throws IOException {
-        InputStream is = new FileInputStream(file);
-
-        long length = file.length();
-        if (length > Integer.MAX_VALUE) {
-            // File is too large
+        if (file.length() > Integer.MAX_VALUE) {
+            throw new IOException("File too big" + file);
         }
-        byte[] bytes = new byte[(int)length];
+        ByteArrayOutputStream ous = null;
+        InputStream ios = null;
+        try {
+            byte[] buffer = new byte[4096];
+            ous = new ByteArrayOutputStream();
+            ios = new FileInputStream(file);
+            int read;
+            while ((read = ios.read(buffer)) != -1) {
+                ous.write(buffer, 0, read);
+            }
+        }finally {
+            try {
+                if (ous != null)
+                    ous.close();
+            } catch (IOException e) {
+            }
 
-        int offset = 0;
-        int numRead = 0;
-        while (offset < bytes.length
-                && (numRead=is.read(bytes, offset, bytes.length-offset)) >= 0) {
-            offset += numRead;
+            try {
+                if (ios != null)
+                    ios.close();
+            } catch (IOException e) {
+            }
         }
-
-        if (offset < bytes.length) {
-            throw new IOException("Could not completely read file "+file.getName());
-        }
-
-        is.close();
-        return bytes;
+        return ous.toByteArray();
     }
 
     public static File toFile(byte[] data, String path) throws IOException {
