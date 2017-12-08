@@ -2,7 +2,6 @@ package com.zanjou.http.util;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Path;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -10,13 +9,10 @@ import android.util.Log;
 import android.webkit.MimeTypeMap;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 
 /**
