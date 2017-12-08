@@ -9,6 +9,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -111,30 +112,13 @@ public class FileUtils {
         if (file.length() > Integer.MAX_VALUE) {
             throw new IOException("File too big" + file);
         }
-        ByteArrayOutputStream ous = null;
-        InputStream ios = null;
-        try {
-            byte[] buffer = new byte[4096];
-            ous = new ByteArrayOutputStream();
-            ios = new FileInputStream(file);
-            int read;
-            while ((read = ios.read(buffer)) != -1) {
-                ous.write(buffer, 0, read);
-            }
-        }finally {
-            try {
-                if (ous != null)
-                    ous.close();
-            } catch (IOException e) {
-            }
+        int size = (int) file.length();
+        byte[] bytes = new byte[size];
 
-            try {
-                if (ios != null)
-                    ios.close();
-            } catch (IOException e) {
-            }
-        }
-        return ous.toByteArray();
+        BufferedInputStream buf = new BufferedInputStream(new FileInputStream(file));
+        buf.read(bytes, 0, bytes.length);
+        buf.close();
+        return bytes;
     }
 
     public static File toFile(byte[] data, String path) throws IOException {
