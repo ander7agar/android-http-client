@@ -7,7 +7,7 @@ import android.widget.TextView;
 
 import com.zanjou.http.debug.Logger;
 import com.zanjou.http.request.Request;
-import com.zanjou.http.request.RequestStateListener;
+import com.zanjou.http.request.RequestListener;
 import com.zanjou.http.response.XmlResponseListener;
 
 import org.jsoup.nodes.Document;
@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
         request.setMethod(Request.GET)
                 .setTimeout(120) //2 Minutes
                 .setLogger(new Logger(Logger.ERROR))
-                .setRequestStateListener(new RequestStateListener() {
+                .setRequestListener(new RequestListener() {
                     @Override
                     public void onStart() {
                         Log.d(TAG, "onStart");
@@ -35,6 +35,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onFinish() {
                         Log.d(TAG, "onFinish");
+                    }
+
+                    @Override
+                    public void onUploadProgress(float progress) {
+                        Log.d(TAG, "onProgress " + progress);
                     }
 
                     @Override

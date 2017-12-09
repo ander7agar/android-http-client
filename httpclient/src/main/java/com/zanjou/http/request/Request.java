@@ -2,15 +2,14 @@ package com.zanjou.http.request;
 
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
-import com.zanjou.http.common.HeaderBag;
+import com.zanjou.http.param.HeaderBag;
 import com.zanjou.http.debug.Logger;
 import com.zanjou.http.param.FileParameter;
 import com.zanjou.http.param.Parameter;
 import com.zanjou.http.param.ParameterBag;
 import com.zanjou.http.param.StringParameter;
-import com.zanjou.http.response.FileDownloadListener;
+import com.zanjou.http.response.ResponseData;
 import com.zanjou.http.response.ResponseListener;
 
 import java.io.BufferedInputStream;
@@ -81,9 +80,7 @@ public class Request {
     private ParameterBag parameters;
     private HeaderBag headers;
     private ResponseListener responseListener;
-    private FileUploadListener fileUploadListener;
-    private FileDownloadListener fileDownloadListener;
-    private RequestStateListener requestStateListener;
+    private RequestListener requestListener;
     private ProgressTask runner;
     private Logger logger;
 
@@ -196,18 +193,8 @@ public class Request {
         return this;
     }
 
-    public Request setFileUploadListener(FileUploadListener fileUploadListener) {
-        this.fileUploadListener = fileUploadListener;
-        return this;
-    }
-
-    public Request setFileDownloadListener(FileDownloadListener fileDownloadListener) {
-        this.fileDownloadListener = fileDownloadListener;
-        return this;
-    }
-
-    public Request setRequestStateListener(RequestStateListener requestStateListener) {
-        this.requestStateListener = requestStateListener;
+    public Request setRequestListener(RequestListener requestListener) {
+        this.requestListener = requestListener;
         return this;
     }
 
@@ -224,26 +211,8 @@ public class Request {
     public void execute() {
         runner = new ProgressTask() {
 
-            boolean fireOnFinish = true;
-
             @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-                if (requestStateListener != null) {
-                    requestStateListener.onStart();
-                }
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                super.onPostExecute(aVoid);
-                if (requestStateListener != null && fireOnFinish) {
-                    requestStateListener.onFinish();
-                }
-            }
-
-            @Override
-            protected Void doInBackground(Void... params) {
+            protected ResponseData doInBackground(Void... params) {
 
                 HostnameVerifier hVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
 
@@ -292,15 +261,14 @@ public class Request {
                     bis.close();
 
                     ResponseData responseData = new ResponseData(responseCode, sb.toString().getBytes());
-                    publishProgress(responseData);
+                    return responseData;
                 } catch (IOException e) {
                     logging("Error trying to perform request", ERROR, e);
-                    fireOnFinish = false;
-                    if (requestStateListener != null) {
-                        requestStateListener.onConnectionError(e);
+                    if (requestListener != null) {
+                        requestListener.onConnectionError(e);
                     }
                 } catch (URISyntaxException e) {
-                    e.printStackTrace();
+                    logging("Error parsing url", ERROR, e);
                 }
 
                 return null;
@@ -317,6 +285,17 @@ public class Request {
         setBinaryParams(entityBuilder);
 
         HttpEntity httpEntity = entityBuilder.build();
+
+        ProgressHttpEntityWrapper.ProgressCallback progressCallback = new ProgressHttpEntityWrapper.ProgressCallback() {
+            @Override
+            public void progress(float progress) {
+                if (runner != null && !runner.isCancelled()) {
+                    runner.publishProgress(progress);
+                }
+            }
+        };
+
+        ProgressHttpEntityWrapper entityWrapper = new ProgressHttpEntityWrapper(httpEntity, progressCallback);
 
         String url = getUrl().toString();
         String method = getMethod();
@@ -338,12 +317,12 @@ public class Request {
                 break;
             case POST:
                 HttpPost post = new HttpPost();
-                post.setEntity(httpEntity);
+                post.setEntity(entityWrapper);
                 hrb = post;
                 break;
             case PUT:
                 HttpPut put = new HttpPut();
-                put.setEntity(httpEntity);
+                put.setEntity(entityWrapper);
                 hrb = put;
                 break;
             case DELETE:
@@ -457,27 +436,35 @@ public class Request {
 
     }
 
-    private abstract class ProgressTask extends AsyncTask<Void, ResponseData, Void> {
+    private abstract class ProgressTask extends AsyncTask<Void, Float, ResponseData> {
 
-        protected void publishProgress2(Object... values) {
+        public void publishProgress(float progress) {
+            super.publishProgress();
+        }
 
-            long length = Long.parseLong(values[0].toString());
-            long progress = Long.parseLong(values[1].toString());
-            File f = (File) values[2];
-            if (fileUploadListener != null) {
-                Log.e(TAG, "uploading " + progress + " / " + length);
-                fileUploadListener.onUploadingFile(f, length, progress);
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            if (requestListener != null) {
+                requestListener.onStart();
             }
         }
 
         @Override
-        protected void onProgressUpdate(ResponseData... values) {
-            super.onProgressUpdate(values);
-
-            if (responseListener != null) {
-                ResponseData responseData = values[0];
+        protected void onPostExecute(ResponseData responseData) {
+            super.onPostExecute(responseData);
+            if (responseListener != null && responseData != null) {
                 responseListener.onResponse(responseData);
             }
+
+            if (requestListener != null) {
+                requestListener.onFinish();
+            }
+        }
+
+        @Override
+        protected void onProgressUpdate(Float... values) {
+            super.onProgressUpdate(values);
         }
     }
 }

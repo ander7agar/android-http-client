@@ -1,7 +1,5 @@
 package com.zanjou.http.response;
 
-import com.zanjou.http.request.ResponseData;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 

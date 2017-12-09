@@ -2,8 +2,6 @@ package com.zanjou.http.response;
 
 import android.support.annotation.NonNull;
 
-import com.zanjou.http.request.ResponseData;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;

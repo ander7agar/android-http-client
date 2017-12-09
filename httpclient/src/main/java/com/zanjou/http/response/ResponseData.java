@@ -1,4 +1,4 @@
-package com.zanjou.http.request;
+package com.zanjou.http.response;
 
 import android.support.annotation.NonNull;
 

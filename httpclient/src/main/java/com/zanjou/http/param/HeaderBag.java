@@ -1,4 +1,4 @@
-package com.zanjou.http.common;
+package com.zanjou.http.param;
 
 import java.util.ArrayList;
 

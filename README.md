@@ -53,6 +53,11 @@ request.setMethod("POST")
         }
 
         @Override
+        public void onUploadProgress(float progress) {
+            
+        }
+                    
+        @Override
         public void onConnectionError(Exception e) {
            e.printStackTrace();
         }
