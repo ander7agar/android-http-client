@@ -1,6 +1,6 @@
 package com.zanjou.http.response;
 
-import android.util.Log;
+import com.zanjou.http.request.ResponseData;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -14,10 +14,9 @@ public abstract class XmlResponseListener extends BaseResponseListener {
     private static final String TAG = "XmlResponseListener";
 
     @Override
-    public void onErrorResponse(int httpCode, String content) {
-        Log.e(TAG, "RESPONSE " + httpCode + ": " + content);
+    public void onErrorResponse(ResponseData responseData) {
         try {
-            Document parse = Jsoup.parse(content);
+            Document parse = Jsoup.parse(responseData.getDataAsString());
             onErrorResponse(parse);
         } catch (Exception e) {
             onParseError(e);
@@ -26,9 +25,9 @@ public abstract class XmlResponseListener extends BaseResponseListener {
     }
 
     @Override
-    public void onOkResponse(String content) {
+    public void onOkResponse(ResponseData responseData) {
         try {
-            Document doc = Jsoup.parse(content);
+            Document doc = Jsoup.parse(responseData.getDataAsString());
             onOkResponse(doc);
         } catch (Exception e) {
             onParseError(e);

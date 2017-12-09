@@ -1,7 +1,6 @@
-package com.zanjou.http.request;
+package com.zanjou.http.param;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -13,26 +12,22 @@ public class ParameterBag extends ArrayList<Parameter> {
     private static final long serialVersionUID = -7245741490129951877L;
 
     public boolean add(String key, String value) {
-        return super.add(new Parameter(key, value));
+        return super.add(new StringParameter(key, value));
     }
 
     public boolean add(String key, long value) {
-        return super.add(new Parameter(key, value));
+        return super.add(new StringParameter(key, value));
     }
 
     public boolean add(String key, double value) {
-        return super.add(new Parameter(key, value));
+        return super.add(new StringParameter(key, value));
     }
 
     public boolean add(String key, boolean value) {
-        return super.add(new Parameter(key, value));
+        return super.add(new StringParameter(key, value));
     }
 
     public boolean add(String key, File value) {
-        try {
-            return super.add(new Parameter(key, value));
-        } catch (IOException e) {
-            return false;
-        }
+        return super.add(new FileParameter(key, value));
     }
 }

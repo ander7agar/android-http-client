@@ -1,6 +1,6 @@
 package com.zanjou.http.response;
 
-import android.util.Log;
+import com.zanjou.http.request.ResponseData;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,19 +13,18 @@ public abstract class JsonResponseListener extends BaseResponseListener {
     private static final String TAG = "JsonResponseListener";
 
     @Override
-    public void onErrorResponse(int httpCode, String content) {
-        Log.e(TAG, "RESPONSE " + httpCode + ": " + content);
+    public void onErrorResponse(ResponseData responseData) {
         try {
-            onErrorResponse(new JSONObject(content));
+            onErrorResponse(new JSONObject(responseData.getDataAsString()));
         } catch (JSONException e) {
             onParseError(e);
         }
     }
 
     @Override
-    public void onOkResponse(String content) {
+    public void onOkResponse(ResponseData responseData) {
         try {
-            onOkResponse(new JSONObject(content));
+            onOkResponse(new JSONObject(responseData.getDataAsString()));
         } catch (JSONException e) {
             onParseError(e);
         }

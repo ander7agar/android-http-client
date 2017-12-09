@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.zanjou.http.test", appContext.getPackageName());
+        assertEquals("com.zanjou.org.apache.http.test", appContext.getPackageName());
     }
 }

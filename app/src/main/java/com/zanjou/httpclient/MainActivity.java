@@ -6,15 +6,10 @@ import android.util.Log;
 import android.widget.TextView;
 
 import com.zanjou.http.debug.Logger;
-import com.zanjou.http.request.FileUploadListener;
-import com.zanjou.http.request.Parameter;
 import com.zanjou.http.request.Request;
 import com.zanjou.http.request.RequestStateListener;
-import com.zanjou.http.response.JsonResponseListener;
 import com.zanjou.http.response.XmlResponseListener;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
 public class MainActivity extends AppCompatActivity {
@@ -27,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         final TextView response = (TextView) findViewById(R.id.response);
-        Request request = Request.create("http://www.google.com");
+        Request request = Request.create("org.apache.http://www.google.com");
         request.setMethod(Request.GET)
                 .setTimeout(120) //2 Minutes
                 .setLogger(new Logger(Logger.ERROR))

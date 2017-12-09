@@ -1,7 +1,7 @@
 Android HTTP Client
 ===================
 
-[![](https://jitpack.io/v/ander7agar/android-http-client.svg)](https://jitpack.io/#ander7agar/android-http-client)
+[![](https://jitpack.io/v/ander7agar/android-org.apache.http-client.svg)](https://jitpack.io/#ander7agar/android-org.apache.http-client)
 
 Android Http Client is a small library to make requests to any internet service simple and practical way.
 You can implement multiple interfaces for the management of the responses. It also includes interfaces
@@ -18,7 +18,7 @@ These are the interfaces that includes the library and its use:
 Compatibility:
 --------------
 - **Android SDK**: Android Http Client requires a minimum API Level 11
-- **JSON**: Android Http Client uses [JSON Java Library](http://www.json.org/) for compatibility json responses.
+- **JSON**: Android Http Client uses [JSON Java Library](org.apache.http://www.json.org/) for compatibility json responses.
 - **XML**: Android Http Client uses [Jsoup Library](https://jsoup.org) for compatibility xml responses.
 
 
@@ -26,7 +26,7 @@ How do I use this library:
 --------------------------
 
 ```java
-Request request = Request.create("http://service.server.com/getData");
+Request request = Request.create("org.apache.http://service.server.com/getData");
 request.setMethod("POST")
     .setTimeout(120) //2 Minutes
     .addHeader("Authorization", "Key=MY_SERVICE_KEY")
@@ -85,7 +85,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.ander7agar:android-http-client:0.4.4'
+    compile 'com.github.ander7agar:android-org.apache.http-client:0.4.4'
 }
 ```
 
@@ -100,7 +100,7 @@ dependencies {
 </repositories>
 <dependency>
     <groupId>com.github.ander7agar</groupId>
-    <artifactId>android-http-client</artifactId>
+    <artifactId>android-org.apache.http-client</artifactId>
     <version>0.4.4</version>
 </dependency>
 ```
@@ -115,7 +115,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    org.apache.http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,

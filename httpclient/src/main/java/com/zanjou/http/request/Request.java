@@ -1,35 +1,54 @@
 package com.zanjou.http.request;
 
-import android.net.Uri;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.zanjou.http.common.Header;
 import com.zanjou.http.common.HeaderBag;
 import com.zanjou.http.debug.Logger;
+import com.zanjou.http.param.FileParameter;
+import com.zanjou.http.param.Parameter;
+import com.zanjou.http.param.ParameterBag;
+import com.zanjou.http.param.StringParameter;
 import com.zanjou.http.response.FileDownloadListener;
-import com.zanjou.http.response.FileResponseListener;
 import com.zanjou.http.response.ResponseListener;
-import com.zanjou.http.util.ByteStream;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.HttpEntity;
+import cz.msebera.android.httpclient.HttpResponse;
+import cz.msebera.android.httpclient.NameValuePair;
+import cz.msebera.android.httpclient.client.methods.HttpDelete;
+import cz.msebera.android.httpclient.client.methods.HttpGet;
+import cz.msebera.android.httpclient.client.methods.HttpOptions;
+import cz.msebera.android.httpclient.client.methods.HttpPost;
+import cz.msebera.android.httpclient.client.methods.HttpPut;
+import cz.msebera.android.httpclient.client.methods.HttpRequestBase;
+import cz.msebera.android.httpclient.client.methods.HttpTrace;
+import cz.msebera.android.httpclient.client.utils.URLEncodedUtils;
+import cz.msebera.android.httpclient.conn.scheme.Scheme;
+import cz.msebera.android.httpclient.conn.scheme.SchemeRegistry;
+import cz.msebera.android.httpclient.conn.ssl.SSLSocketFactory;
+import cz.msebera.android.httpclient.conn.ssl.X509HostnameVerifier;
+import cz.msebera.android.httpclient.entity.mime.MultipartEntityBuilder;
+import cz.msebera.android.httpclient.impl.client.DefaultHttpClient;
+import cz.msebera.android.httpclient.impl.conn.SingleClientConnManager;
+import cz.msebera.android.httpclient.message.BasicNameValuePair;
+import cz.msebera.android.httpclient.params.HttpConnectionParams;
+import cz.msebera.android.httpclient.params.HttpParams;
 
 import static com.zanjou.http.debug.Logger.DEBUG;
 import static com.zanjou.http.debug.Logger.ERROR;
@@ -42,19 +61,21 @@ public class Request {
 
     private static final String TAG = "Request";
 
+    private static final int BUFF_SIZE = 1024;
     private static final String CRLF = "\r\n";
 
     public static final String GET = "GET";
     public static final String POST = "POST";
     public static final String PUT = "PUT";
     public static final String DELETE = "DELETE";
-    public static final String OPTIONS = "OPTIONS";
-    public static final String HEAD = "HEAD";
     public static final String TRACE = "TRACE";
+    public static final String OPTIONS = "OPTIONS";
 
     public static final int DEFAULT_TIMEOUT = 60;
 
     private URL url;
+
+    @HttpMethod
     private String method;
     private ParameterBag parameters;
     private HeaderBag headers;
@@ -88,11 +109,12 @@ public class Request {
         return this;
     }
 
+    @HttpMethod
     public String getMethod() {
         return method;
     }
 
-    public Request setMethod(String method) {
+    public Request setMethod(@HttpMethod String method) {
         this.method = method.toUpperCase();
         return this;
     }
@@ -229,61 +251,58 @@ public class Request {
             @Override
             protected Void doInBackground(Void... params) {
 
+                HostnameVerifier hVerifier = org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+
+                DefaultHttpClient httpclient = new DefaultHttpClient();
+                SchemeRegistry registry =  new SchemeRegistry();
+
+                SSLSocketFactory socketFactory = SSLSocketFactory.getSocketFactory();
+                socketFactory.setHostnameVerifier((X509HostnameVerifier) hVerifier);
+                registry.register(new Scheme("https", socketFactory, 443));
+                SingleClientConnManager mgr = new SingleClientConnManager(httpclient.getParams(), registry);
+                httpclient = new DefaultHttpClient(mgr, httpclient.getParams());
+
+                // Set verifier
+                HttpsURLConnection.setDefaultHostnameVerifier(hVerifier);
+
                 try {
-
-                    String method = getMethod();
-
-                    String finalUrl = parseWithGet();
-
-                    URL finalURL = new URL(finalUrl);
-
-                    HttpURLConnection connection = (HttpURLConnection) finalURL.openConnection();
-                    connection.setConnectTimeout(timeout);
-
-                    connection.setDoOutput(!method.equals(GET));
-                    connection.setRequestMethod(getMethod());
-
                     logging("URL: " + method + " " + url.toString(), DEBUG);
-
-                    sendHeaders(connection);
+                    printHeaders();
                     printParams();
 
-                    if (!method.equals(GET)) {
-                        OutputStream outputStream = connection.getOutputStream();
-                        sendParams(outputStream);
-                    }
+                    HttpRequestBase hrb = buildRequest();
+                    HttpParams httpParams = httpclient.getParams();
+                    HttpConnectionParams.setConnectionTimeout(httpParams, timeout);
+                    HttpConnectionParams.setSoTimeout(httpParams, timeout);
 
-                    int responseCode = connection.getResponseCode();
-                    byte[] data;
-                    if (responseCode >= 200 && responseCode <= 399) {
-                        if (responseListener instanceof FileResponseListener) {
-                            downloadFile(connection);
-                            return null;
-                        } else {
-                            data = ByteStream.toByteArray(connection.getInputStream());
-                        }
+                    HttpResponse response = httpclient.execute(hrb);
+                    int responseCode = response.getStatusLine().getStatusCode();
+
+                    InputStream is;
+
+                    if (response.getEntity() == null) {
+                        String jsonString = "{\"status\":\"No server entity.\"}";
+                        is = new ByteArrayInputStream(jsonString.getBytes());
                     } else {
-                        InputStream is = connection.getErrorStream();
-                        if (is != null) {
-                            data = ByteStream.toByteArray(connection.getErrorStream());
-                        } else {
-                            logging("No response. Invalid HTTP CODE Response? " + responseCode, ERROR);
-                            data = "{\"error\":\"No response\"}".getBytes();
-                        }
+                        is = response.getEntity().getContent();
                     }
 
-                    String response = new String(data);
+                    int streamLength = is.available();
+                    byte[] data = new byte[streamLength];
 
-                    logging("Response: " + response, DEBUG);
+                    is.read(data);
+                    is.close();
 
-                    publishProgress(responseCode, response);
-                    connection.disconnect();
+                    ResponseData responseData = new ResponseData(responseCode, data);
+                    publishProgress(responseData);
                 } catch (IOException e) {
                     logging("Error trying to perform request", ERROR, e);
                     fireOnFinish = false;
                     if (requestStateListener != null) {
                         requestStateListener.onConnectionError(e);
                     }
+                } catch (URISyntaxException e) {
+                    e.printStackTrace();
                 }
 
                 return null;
@@ -293,104 +312,96 @@ public class Request {
         runner.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
-    private String
-    parseWithGet() {
+    private HttpRequestBase buildRequest() throws MalformedURLException, URISyntaxException {
+        HttpRequestBase hrb;
+        MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+        setTextParams(entityBuilder);
+        setBinaryParams(entityBuilder);
+
+        HttpEntity httpEntity = entityBuilder.build();
+
+        String url = getUrl().toString();
         String method = getMethod();
 
-        if (method == null) {
-            method = GET;
+        switch (method) {
+            case GET:
+                hrb = new HttpGet();
+                List<NameValuePair> nameValuePairList = new ArrayList<>();
+                for (Parameter p : getParameters()) {
+                    if (p instanceof StringParameter) {
+                        nameValuePairList.add(new BasicNameValuePair(p.getKey(), (String) p.getValue()));
+                    }
+                }
+
+                if (nameValuePairList.size() > 0) {
+                    url = url + "?" +
+                            URLEncodedUtils.format(nameValuePairList, "utf-8");
+                }
+                break;
+            case POST:
+                HttpPost post = new HttpPost();
+                post.setEntity(httpEntity);
+                hrb = post;
+                break;
+            case PUT:
+                HttpPut put = new HttpPut();
+                put.setEntity(httpEntity);
+                hrb = put;
+                break;
+            case DELETE:
+                hrb = new HttpDelete();
+                break;
+            case OPTIONS:
+                hrb = new HttpOptions();
+                break;
+            case TRACE:
+                hrb = new HttpTrace();
+                break;
+            default:
+                throw new IllegalArgumentException("Http Method '" + method + "' not supported.");
         }
 
-        if (!method.equalsIgnoreCase(GET)) {
-            return url.toString();
-        }
+        setHeaders(hrb);
+        hrb.setURI(new URL(url).toURI());
+        return hrb;
+    }
 
-        Uri uri = Uri.parse(url.toString());
-        Uri.Builder uriBuilder = uri.buildUpon();
+    private void setHeaders(@NonNull HttpRequestBase hrb) {
+        HeaderBag headers = getHeaders();
+        hrb.setHeaders(headers.toArray(new Header[]{}));
+    }
 
+    private void setTextParams(@NonNull MultipartEntityBuilder entityBuilder) {
         ParameterBag parameters = getParameters();
-
         for (Parameter p : parameters) {
-            if (p.isFile()) {
-                continue;
+            if (p instanceof StringParameter) {
+                entityBuilder.addTextBody(p.getKey(), (String) p.getValue());
             }
-
-            uriBuilder.appendQueryParameter(p.getNameParam(), p.getValueAsString());
         }
+    }
 
-        return uriBuilder.build().toString();
+    private void setBinaryParams(@NonNull MultipartEntityBuilder entityBuilder) {
+        ParameterBag parameters = getParameters();
+        for (Parameter p : parameters) {
+            if (p instanceof FileParameter) {
+                entityBuilder.addBinaryBody(p.getKey(), (File) p.getValue());
+            }
+        }
     }
 
     private void printParams() {
         logging("---- PARAMETERS ----", DEBUG);
 
         for (Parameter p : parameters) {
-            if (p.isFile() && method.equalsIgnoreCase(GET)) {
-                logging(p.getNameParam() + " = IGNORED FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
+            if (p instanceof FileParameter && method.equalsIgnoreCase(GET)) {
+                logging(p.getKey() + " = IGNORED FILE[" + ((File) p.getValue()).getAbsolutePath() + "]", DEBUG);
                 continue;
-            } else if (p.isFile()) {
-                logging(p.getNameParam() + " = FILE[" + p.getFile().getAbsolutePath() + "]", DEBUG);
+            } else if (p instanceof FileParameter) {
+                logging(p.getKey() + " = FILE[" + ((File) p.getValue()).getAbsolutePath() + "]", DEBUG);
                 continue;
             }
 
-            logging(p.getNameParam() + " = " + new String(p.getParamValue()), DEBUG);
-        }
-
-    }
-
-    private void downloadFile(HttpURLConnection connection) throws IOException {
-        int fileLength = connection.getContentLength();
-        int bufferSize = fileLength / 100;
-        if (bufferSize <= 0) {
-            bufferSize = 1;
-        }
-
-        FileResponseListener fileListener = (FileResponseListener) responseListener;
-        File downloadFile = fileListener.getFile();
-        OutputStream output  = new FileOutputStream(downloadFile);
-
-        InputStream input = connection.getInputStream();
-
-        byte[] fileData = new byte[bufferSize];
-        long total = 0;
-        int count;
-
-        if (fileDownloadListener != null) {
-            fileDownloadListener.onDownloadStart();
-        }
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        while ((count = input.read(fileData)) != -1) {
-            if (runner.isCancelled()) {
-                input.close();
-                output.close();
-                if (fileDownloadListener != null) {
-                    fileDownloadListener.onDownloadCancel();
-                }
-
-                fileListener.onCancel();
-                return;
-            }
-
-            total += count;
-            baos.write(fileData, 0, count);
-
-            if (fileDownloadListener != null) {
-                fileDownloadListener.onDownloadingFile(downloadFile, fileLength, total);
-            }
-        }
-
-        byte[] data = baos.toByteArray();
-        output.write(data);
-        output.flush();
-        output.close();
-
-        if (!runner.isCancelled()) {
-            if (fileDownloadListener != null) {
-                fileDownloadListener.onDownloadFinish();
-            }
-            responseListener.onResponse(200, new String(data));
+            logging(p.getKey() + " = " + p.getValue(), DEBUG);
         }
 
     }
@@ -401,105 +412,15 @@ public class Request {
         }
     }
 
-    private void sendParams(OutputStream outputStream) throws IOException {
-        if (!parameters.isEmpty()) {
-            PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, "UTF-8"));
-
-            for (Parameter p : parameters) {
-
-                writer.append("--").append(boundary).append(CRLF);
-
-                writer.append(p.getContentType()).append(CRLF);
-
-                if (p.isFile()) {
-                    DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-
-                    writer.append("Content-Disposition: form-data; name=\"")
-                            .append(p.getNameParam())
-                            .append("\"; filename=\"")
-                            .append(p.getFile().getName())
-                            .append("\"")
-                            .append(CRLF).flush();
-
-                    writer.append(p.getContentType())
-                            .append(CRLF);
-
-                    writer.append("Content-Transfer-Encoding: binary")
-                            .append(CRLF);
-
-                    writer.flush();
-
-                    byte[] data = p.getParamValue();
-
-                    if (fileUploadListener != null) {
-                        fileUploadListener.onUploadStart();
-                    }
-
-                    ByteArrayInputStream bais = new ByteArrayInputStream(data);
-                    int maxBufferSize = 4096;
-                    int bytesAvailable = bais.available();
-
-                    int bufferSize = Math.min(bytesAvailable, maxBufferSize);
-                    byte[] buffer = new byte[bufferSize];
-                    int bytesRead = bais.read(buffer, 0, bufferSize);
-
-                    long progress = 0;
-                    while (bytesRead > 0) {
-                        if (runner.isCancelled()) {
-                            bais.close();
-                            dataOutputStream.close();
-                            if (fileUploadListener != null) {
-                                fileUploadListener.onUploadCancel();
-                            }
-                            return;
-                        }
-
-                        dataOutputStream.write(buffer, 0, bufferSize);
-                        progress += bufferSize;
-
-                        runner.publishProgress2((long) data.length, progress, p.getFile());
-
-                        bytesAvailable = bais.available();
-                        bufferSize = Math.min(bytesAvailable, maxBufferSize);
-                        bytesRead = bais.read(buffer, 0, bufferSize);
-
-                    }
-
-                    dataOutputStream.flush();
-                    if (fileUploadListener != null) {
-                        fileUploadListener.onUploadFinish(p.getFile());
-                    }
-
-                } else {
-                    if (!method.equals(GET)) {
-                        writer.append("Content-Disposition: form-data; name=\"")
-                                .append(p.getNameParam())
-                                .append("\"").append(CRLF);
-                        writer.append(p.getContentType())
-                                .append(CRLF);
-                        writer.append(CRLF).append(p.getValueAsString());
-                    }
-
-                }
-
-                writer.append(CRLF).flush();
-            }
-            writer.append("--").append(boundary).append("--").append(CRLF).flush();
-        }
-
-    }
-
-    private void sendHeaders(URLConnection connection) {
+    private void printHeaders() {
         logging("---- HEADERS ----", DEBUG);
         for (Header h : headers) {
-            String key = h.getKey();
+            String key = h.getName();
             if (method.equalsIgnoreCase("GET") && key.equalsIgnoreCase("content-type")) {
                 continue;
             }
 
             logging(key + " = " + h.getValue(), DEBUG);
-
-            connection.addRequestProperty(key, h.getValue());
         }
     }
 
@@ -525,7 +446,7 @@ public class Request {
 
     public static Request create(String url) {
         if (!url.contains("https://") && !url.contains("https://")) {
-            url = "http://" + url;
+            url = "org.apache.http://" + url;
         }
 
         try {
@@ -538,12 +459,10 @@ public class Request {
 
     }
 
-
-
-
-    private abstract class ProgressTask extends AsyncTask<Void, Object, Void> {
+    private abstract class ProgressTask extends AsyncTask<Void, ResponseData, Void> {
 
         protected void publishProgress2(Object... values) {
+
             long length = Long.parseLong(values[0].toString());
             long progress = Long.parseLong(values[1].toString());
             File f = (File) values[2];
@@ -554,13 +473,12 @@ public class Request {
         }
 
         @Override
-        protected void onProgressUpdate(Object... values) {
+        protected void onProgressUpdate(ResponseData... values) {
             super.onProgressUpdate(values);
 
             if (responseListener != null) {
-                int responseCode = Integer.parseInt(values[0].toString());
-                String response = values[1].toString();
-                responseListener.onResponse(responseCode, response);
+                ResponseData responseData = values[0];
+                responseListener.onResponse(responseData);
             }
         }
     }
