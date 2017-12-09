@@ -79,7 +79,6 @@ public class Request {
     private String method;
     private ParameterBag parameters;
     private HeaderBag headers;
-    private String boundary;
     private ResponseListener responseListener;
     private FileUploadListener fileUploadListener;
     private FileDownloadListener fileDownloadListener;
@@ -90,14 +89,8 @@ public class Request {
     private int timeout = DEFAULT_TIMEOUT * 1000;
 
     private Request(){
-        boundary = Long.toHexString(System.currentTimeMillis());
         parameters = new ParameterBag();
         headers = new HeaderBag();
-        headers.add("Content-Type", "multipart/form-data; boundary=" + boundary);
-    }
-
-    public String getBoundary() {
-        return boundary;
     }
 
     public URL getUrl() {
