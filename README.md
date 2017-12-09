@@ -18,7 +18,7 @@ These are the interfaces that includes the library and its use:
 Compatibility:
 --------------
 - **Android SDK**: Android Http Client requires a minimum API Level 14
-- **Mark Sebera Http Client**: [Mark Sebera Http Client](https://github.com/smarek/httpclient-android) for Android.
+- **Marek Sebera Http Client**: [Marek Sebera Http Client](https://github.com/smarek/httpclient-android) for Android.
 - **JSON**: Android Http Client uses [JSON Java Library](http://www.json.org/) for compatibility json responses.
 - **XML**: Android Http Client uses [Jsoup Library](https://jsoup.org) for compatibility xml responses.
 
