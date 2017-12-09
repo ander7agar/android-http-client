@@ -89,7 +89,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.ander7agar:android-org.apache.http-client:0.4.4'
+    compile 'com.github.ander7agar:android-org.apache.http-client:0.5.0'
 }
 ```
 
@@ -105,7 +105,7 @@ dependencies {
 <dependency>
     <groupId>com.github.ander7agar</groupId>
     <artifactId>android-org.apache.http-client</artifactId>
-    <version>0.4.4</version>
+    <version>0.5.0</version>
 </dependency>
 ```
 
