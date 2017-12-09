@@ -17,8 +17,9 @@ These are the interfaces that includes the library and its use:
 
 Compatibility:
 --------------
-- **Android SDK**: Android Http Client requires a minimum API Level 11
-- **JSON**: Android Http Client uses [JSON Java Library](org.apache.http://www.json.org/) for compatibility json responses.
+- **Android SDK**: Android Http Client requires a minimum API Level 14
+- **Mark Sebera Http Client**: [Mark Sebera Http Client](https://github.com/smarek/httpclient-android) for Android.
+- **JSON**: Android Http Client uses [JSON Java Library](http://www.json.org/) for compatibility json responses.
 - **XML**: Android Http Client uses [Jsoup Library](https://jsoup.org) for compatibility xml responses.
 
 
@@ -26,7 +27,7 @@ How do I use this library:
 --------------------------
 
 ```java
-Request request = Request.create("org.apache.http://service.server.com/getData");
+Request request = Request.create("http://service.server.com/getData");
 request.setMethod("POST")
     .setTimeout(120) //2 Minutes
     .addHeader("Authorization", "Key=MY_SERVICE_KEY")

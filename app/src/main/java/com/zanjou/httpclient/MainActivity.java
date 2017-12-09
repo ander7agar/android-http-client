@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         final TextView response = (TextView) findViewById(R.id.response);
-        Request request = Request.create("org.apache.http://www.google.com");
+        Request request = Request.create("http://www.google.com");
         request.setMethod(Request.GET)
                 .setTimeout(120) //2 Minutes
                 .setLogger(new Logger(Logger.ERROR))
