@@ -251,7 +251,7 @@ public class Request {
             @Override
             protected Void doInBackground(Void... params) {
 
-                HostnameVerifier hVerifier = org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+                HostnameVerifier hVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
 
                 DefaultHttpClient httpclient = new DefaultHttpClient();
                 SchemeRegistry registry =  new SchemeRegistry();
