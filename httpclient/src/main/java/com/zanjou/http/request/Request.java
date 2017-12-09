@@ -13,6 +13,7 @@ import com.zanjou.http.param.StringParameter;
 import com.zanjou.http.response.FileDownloadListener;
 import com.zanjou.http.response.ResponseListener;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -271,22 +272,26 @@ public class Request {
                     HttpResponse response = httpclient.execute(hrb);
                     int responseCode = response.getStatusLine().getStatusCode();
 
-                    InputStream is;
+                    BufferedInputStream bis;
 
                     if (response.getEntity() == null) {
                         String jsonString = "{\"status\":\"No server entity.\"}";
-                        is = new ByteArrayInputStream(jsonString.getBytes());
+                        InputStream is = new ByteArrayInputStream(jsonString.getBytes());
+                        bis = new BufferedInputStream(is, BUFF_SIZE);
                     } else {
-                        is = response.getEntity().getContent();
+                        bis = new BufferedInputStream(response.getEntity().getContent(), BUFF_SIZE);
                     }
 
-                    int streamLength = is.available();
-                    byte[] data = new byte[streamLength];
+                    StringBuilder sb = new StringBuilder();
+                    byte[] buffer = new byte[BUFF_SIZE];
+                    int bytesRead;
+                    while ((bytesRead = bis.read(buffer)) > 0) {
+                        sb.append(new String(buffer, 0, bytesRead, "UTF-8"));
+                    }
 
-                    is.read(data);
-                    is.close();
+                    bis.close();
 
-                    ResponseData responseData = new ResponseData(responseCode, data);
+                    ResponseData responseData = new ResponseData(responseCode, sb.toString().getBytes());
                     publishProgress(responseData);
                 } catch (IOException e) {
                     logging("Error trying to perform request", ERROR, e);
