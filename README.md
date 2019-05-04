@@ -1,8 +1,7 @@
 Android HTTP Client
 ===================
 
-[![](https://jitpack.io/v/ander7agar/android-org.apache.http-client.svg)](https://jitpack.io/#ander7agar/android-org.apache.http-client)
-
+[![](https://jitpack.io/v/ander7agar/android-http-client.svg)](https://jitpack.io/#ander7agar/android-http-client)
 Android Http Client is a small library to make requests to any internet service simple and practical way.
 You can implement multiple interfaces for the management of the responses. It also includes interfaces
 for managing upload and download of files.
