@@ -11,12 +11,14 @@ import com.zanjou.http.param.ParameterBag;
 import com.zanjou.http.param.StringParameter;
 import com.zanjou.http.response.ResponseData;
 import com.zanjou.http.response.ResponseListener;
+import com.zanjou.http.util.ByteStream;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -43,6 +45,8 @@ import cz.msebera.android.httpclient.conn.scheme.Scheme;
 import cz.msebera.android.httpclient.conn.scheme.SchemeRegistry;
 import cz.msebera.android.httpclient.conn.ssl.SSLSocketFactory;
 import cz.msebera.android.httpclient.conn.ssl.X509HostnameVerifier;
+import cz.msebera.android.httpclient.entity.ContentType;
+import cz.msebera.android.httpclient.entity.StringEntity;
 import cz.msebera.android.httpclient.entity.mime.MultipartEntityBuilder;
 import cz.msebera.android.httpclient.impl.client.DefaultHttpClient;
 import cz.msebera.android.httpclient.impl.conn.SingleClientConnManager;
@@ -77,6 +81,7 @@ public class Request {
 
     @HttpMethod
     private String method;
+    private StringEntity postEntity;
     private ParameterBag parameters;
     private HeaderBag headers;
     private ResponseListener responseListener;
@@ -151,6 +156,20 @@ public class Request {
 
     public Request addParameter(String key, File value) {
         parameters.add(key, value);
+        return this;
+    }
+
+    public Request postBody(@NonNull String body) throws UnsupportedEncodingException {
+        this.postEntity = new StringEntity(body);
+        this.setMethod(POST);
+        return this;
+    }
+
+    public Request postBody(@NonNull String contentType, @NonNull String body) {
+        ContentType ct = ContentType.create(contentType);
+        this.postEntity = new StringEntity(body, ct);
+        this.setMethod(POST);
+        this.addHeader("Content-Type", contentType);
         return this;
     }
 
@@ -280,11 +299,16 @@ public class Request {
 
     private HttpRequestBase buildRequest() throws MalformedURLException, URISyntaxException {
         HttpRequestBase hrb;
-        MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
-        setTextParams(entityBuilder);
-        setBinaryParams(entityBuilder);
+        HttpEntity httpEntity;
+        if (this.postEntity != null) {
+            httpEntity = this.postEntity;
+        } else {
+            MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+            setTextParams(entityBuilder);
+            setBinaryParams(entityBuilder);
 
-        HttpEntity httpEntity = entityBuilder.build();
+            httpEntity = entityBuilder.build();
+        }
 
         ProgressHttpEntityWrapper.ProgressCallback progressCallback = new ProgressHttpEntityWrapper.ProgressCallback() {
             @Override
@@ -367,19 +391,32 @@ public class Request {
     }
 
     private void printParams() {
-        logging("---- PARAMETERS ----", DEBUG);
+        if (this.postEntity != null) {
+            logging("---- POST BODY ----", DEBUG);
 
-        for (Parameter p : parameters) {
-            if (p instanceof FileParameter && method.equalsIgnoreCase(GET)) {
-                logging(p.getKey() + " = IGNORED FILE[" + ((File) p.getValue()).getAbsolutePath() + "]", DEBUG);
-                continue;
-            } else if (p instanceof FileParameter) {
-                logging(p.getKey() + " = FILE[" + ((File) p.getValue()).getAbsolutePath() + "]", DEBUG);
-                continue;
+            try {
+                byte[] postData = ByteStream.toByteArray(this.postEntity.getContent());
+                logging(new String(postData), DEBUG);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
-            logging(p.getKey() + " = " + p.getValue(), DEBUG);
+        } else {
+            logging("---- PARAMETERS ----", DEBUG);
+
+            for (Parameter p : parameters) {
+                if (p instanceof FileParameter && method.equalsIgnoreCase(GET)) {
+                    logging(p.getKey() + " = IGNORED FILE[" + ((File) p.getValue()).getAbsolutePath() + "]", DEBUG);
+                    continue;
+                } else if (p instanceof FileParameter) {
+                    logging(p.getKey() + " = FILE[" + ((File) p.getValue()).getAbsolutePath() + "]", DEBUG);
+                    continue;
+                }
+
+                logging(p.getKey() + " = " + p.getValue(), DEBUG);
+            }
         }
+
 
     }
 
