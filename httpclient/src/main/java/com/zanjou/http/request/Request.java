@@ -460,7 +460,7 @@ public class Request {
 
     public static Request create(String url) {
         if (!url.contains("https://") && !url.contains("https://")) {
-            url = "org.apache.http://" + url;
+            url = "http://" + url;
         }
 
         try {
